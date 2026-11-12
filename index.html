@@ -106,7 +106,7 @@ footer a{color:var(--c1)}
 
 <footer>
  © <span id="yr"></span> 關麗瑩老師 ｜ 工具均以 HTML 製作，無需安裝，建議使用 Chrome / Edge / Safari 開啟。
- ｜ <a href="https://github.com/kwanly-rgb/kwan" target="_blank" rel="noopener">GitHub 倉庫</a>
+ ｜ <a href="https://github.com/mskwanly/math" target="_blank" rel="noopener">GitHub 倉庫</a>  <!-- ★ 已改為新 repo，如名稱唔同請改返 -->
 </footer>
 
 <div class="modal" id="modal"><div class="box"><div class="mh"><h3 id="mTitle"></h3><a class="btn small" id="mOpen" target="_blank" rel="noopener">↗ 開啟工具</a><button class="x" id="mClose" aria-label="關閉">✕</button></div><div class="mb" id="mBody"></div></div></div>
@@ -114,7 +114,14 @@ footer a{color:var(--c1)}
 
 <script>
 /* ============================================================
+   ★ 版本號：每次更新「任何」工具 html 後，改一改這個日期並一同上載，
+     所有人（包括你自己）打開傳送門都會自動載入最新版本，唔會再被快取卡住。
+   ============================================================ */
+const VER='2026-11-12';
+
+/* ============================================================
    ★ 新增工具只需在這裏加一個項目 ★（QR code 會自動產生，毋須設定）
+   url 一律用相對路徑（同 index.html 同一資料夾就直接寫檔名）
    preview 四選一：
      {type:'live'}                                   即時縮圖（直接嵌入工具網頁，不用錄影）
      {type:'video', src:'previews/xxx.mp4', poster:'previews/xxx.jpg'}   自己錄的短片（poster 可省略）
@@ -153,7 +160,8 @@ let topic='全部';
 const topics=['全部',...new Set(TOOLS.map(t=>t.topic))];
 topics.forEach(t=>{const b=document.createElement('button');b.className='chip'+(t===topic?' active':'');b.textContent=t;b.onclick=()=>{topic=t;chips.querySelectorAll('.chip').forEach(c=>c.classList.toggle('active',c===b));render();};chips.append(b);});
 
-const abs=url=>new URL(url,location.href).href;
+const abs=url=>new URL(url,location.href).href;                        // 完整乾淨網址（QR / 複製連結用）
+const vurl=url=>url+(url.includes('?')?'&':'?')+'v='+VER;              // ★ 帶版本號網址（預覽 / 開啟用，避開快取）
 const isLocal=location.protocol==='file:';
 function showToast(msg){toast.textContent=msg;toast.classList.add('show');setTimeout(()=>toast.classList.remove('show'),1800);}
 function copy(url){(navigator.clipboard?navigator.clipboard.writeText(abs(url)):Promise.reject()).then(()=>showToast('已複製連結 ✅'),()=>prompt('請複製以下連結：',abs(url)));}
@@ -180,7 +188,7 @@ function downloadQR(t){
 }
 function openQR(t){
  const url=abs(t.url);
- mTitle.textContent='📱 掃碼開啟：'+t.title;mOpen.href=t.url;
+ mTitle.textContent='📱 掃碼開啟：'+t.title;mOpen.href=vurl(t.url);   // ★
  mBody.className='mb qrbig';
  mBody.innerHTML=`${makeQR(url,{cellSize:10,margin:0})}
   <div class="url">${url}</div>
@@ -205,7 +213,7 @@ function previewHTML(t){
  const p=t.preview,ph=`<div class="ph">${t.icon}</div>`;
  if(!p)return ph;
  switch(p.type){
-  case 'live':return `<div class="live" data-src="${t.url}"><div class="loading">⏳ 載入預覽中…</div></div><span class="lbl">即時預覽</span>`;
+  case 'live':return `<div class="live" data-src="${vurl(t.url)}"><div class="loading">⏳ 載入預覽中…</div></div><span class="lbl">即時預覽</span>`;   // ★
   case 'video':return `<video muted loop playsinline preload="metadata" ${p.poster?`poster="${p.poster}"`:''} src="${p.src}"></video><span class="lbl">▶ 影片預覽</span>`;
   case 'gif':return `<img src="${p.src}" loading="lazy" alt="${t.title} 預覽"><span class="lbl">預覽</span>`;
   case 'youtube':return `<img src="https://img.youtube.com/vi/${p.id}/hqdefault.jpg" loading="lazy" alt="${t.title} 影片"><div class="yt"><span>▶</span></div><span class="lbl">YouTube</span>`;
@@ -216,13 +224,13 @@ function bigHTML(t){
  const p=t.preview;
  if(!p)return '';
  switch(p.type){
-  case 'live':return `<iframe src="${t.url}" title="${t.title}"></iframe>`;
+  case 'live':return `<iframe src="${vurl(t.url)}" title="${t.title}"></iframe>`;   // ★
   case 'video':return `<video src="${p.src}" controls autoplay muted loop playsinline></video>`;
   case 'gif':return `<img src="${p.src}" alt="">`;
   case 'youtube':return `<iframe src="https://www.youtube.com/embed/${p.id}?autoplay=1" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen title="${t.title}"></iframe>`;
  }
 }
-function openModal(t){mTitle.textContent=t.title;mOpen.href=t.url;mBody.className='mb';mBody.innerHTML=bigHTML(t);modal.classList.add('open');document.body.style.overflow='hidden';}
+function openModal(t){mTitle.textContent=t.title;mOpen.href=vurl(t.url);mBody.className='mb';mBody.innerHTML=bigHTML(t);modal.classList.add('open');document.body.style.overflow='hidden';}   // ★
 function closeModal(){modal.classList.remove('open');mBody.innerHTML='';mBody.className='mb';document.body.style.overflow='';}
 document.getElementById('mClose').onclick=closeModal;
 modal.addEventListener('click',e=>{if(e.target===modal)closeModal();});
@@ -235,26 +243,27 @@ function render(){
  grid.innerHTML=list.length?'':'<div class="empty">找不到相關工具，試試其他關鍵字。</div>';
  list.forEach(t=>{
   const c=document.createElement('article');c.className='card';c.style.setProperty('--accent',t.color||'#2b6cb0');
+  const link=vurl(t.url);   // ★ 帶版本號的開啟連結
   c.innerHTML=`<div class="preview" title="按一下放大預覽">${previewHTML(t)}<span class="zoom">🔍 放大預覽</span></div>
    <div class="body">
     <div class="top">
-     <a class="icon" href="${t.url}" title="開啟 ${t.title}">${t.icon}</a>
+     <a class="icon" href="${link}" title="開啟 ${t.title}">${t.icon}</a>
      <div>
-      <h2 class="${t.isNew?'new':''}"><a href="${t.url}" title="開啟 ${t.title}">${t.title}</a></h2>
+      <h2 class="${t.isNew?'new':''}"><a href="${link}" title="開啟 ${t.title}">${t.title}</a></h2>
       <div class="tags"><span class="tag">${t.topic}</span></div>
      </div>
     </div>
     <p class="desc">${t.desc}</p>
     <div class="tags">${t.tags.map(x=>`<span class="tag">#${x}</span>`).join('')}</div>
     <div class="foot">
-     <div class="btns"><a class="btn" href="${t.url}">▶ 開啟</a><a class="btn ghost" href="${t.url}" target="_blank" rel="noopener">↗ 新視窗</a><button class="btn ghost small" data-url="${t.url}">🔗 複製連結</button></div>
+     <div class="btns"><a class="btn" href="${link}">▶ 開啟</a><a class="btn ghost" href="${link}" target="_blank" rel="noopener">↗ 新視窗</a><button class="btn ghost small" data-url="${t.url}">🔗 複製連結</button></div>
      <div class="qr" title="按一下放大 QR code">${makeQR(abs(t.url))}掃碼開啟</div>
     </div>
    </div>`;
   c.querySelector('.btns button').onclick=e=>copy(e.currentTarget.dataset.url);
   c.querySelector('.qr').onclick=()=>openQR(t);
   const pv=c.querySelector('.preview');
-  pv.onclick=()=>t.preview?openModal(t):location.assign(t.url);
+  pv.onclick=()=>t.preview?openModal(t):location.assign(link);   // ★
   const v=pv.querySelector('video');
   if(v){v.onerror=()=>{pv.innerHTML=`<div class="ph">${t.icon}</div><span class="lbl">找不到影片檔</span>`;};pv.onmouseenter=()=>v.play().catch(()=>{});io.observe(v);}
   const lv=pv.querySelector('.live');if(lv)io.observe(lv);
